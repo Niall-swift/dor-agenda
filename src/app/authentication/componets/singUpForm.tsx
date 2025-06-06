@@ -9,12 +9,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/authClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const registerSchema = z.object({
-  username: z.string().trim().min(2, { message: "Nome é obrigatório" }),
+  name: z.string().trim().min(2, { message: "Nome é obrigatório" }),
   email: z
     .string()
     .trim()
@@ -24,17 +27,26 @@ const registerSchema = z.object({
 });
 
 function SingUpForm() {
+  const router = useRouter();
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
+      name: "",
       email: "",
       password: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof registerSchema>) {
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof registerSchema>) {
+   await authClient.signUp.email({
+      email: values.email,
+      password: values.password,
+      name: values.name,
+    },{
+      onSuccess: () => {
+        router.push("/dashboard");
+      },
+    });
   }
 
   return (
@@ -44,7 +56,7 @@ function SingUpForm() {
           <CardContent className="grid gap-6">
             <FormField
               control={form.control}
-              name="username"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
@@ -83,8 +95,13 @@ function SingUpForm() {
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Criar conta
+            <Button type="submit" className="w-full"
+            disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ?
+              (<Loader2 className="w-4 h-4 animate-spin" />)
+               : 
+              "Criar conta"}
             </Button>
           </CardFooter>
         </form>
